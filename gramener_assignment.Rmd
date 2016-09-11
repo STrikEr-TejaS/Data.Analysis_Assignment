@@ -1,0 +1,177 @@
+---
+title: "Gramener_Assignment"
+output: word_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+**CampaignData.csv** inludes the data of a Direct Marketing campaign of a European Banking institution. The marketing campaigns were conducted through phone calls. 
+Often, more than one contact to the same client was required, in order to access if the product subscribed (bank term deposit) would be ('yes') or ('no') 
+
+A brief analysis has been performed on the data procured and documented as an R Markdown document.
+
+**Loading and processing Dataset**
+
+```{r}
+myy <- read.table("New.txt", header = TRUE, sep = ";")
+
+m1 <- data.frame(myy)
+
+m1$ID<-seq.int(nrow(m1)) ## Adding a new column ID
+
+m2 <- m1[c(22,1:21)] ## Re-positioning the column ID to the beginning
+
+summary(m2)
+```
+
+
+
+**Distribution of Age w.r.t the positive response**
+
+The column age.group includes the age of all the clients contacted for the term deposit. Now, let's map the distribution of age of the clients over the positive response.
+
+
+```{r}
+library(data.table); library(ggplot2); library(plyr);
+
+m2$age.group <- findInterval(m1$age, c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100))
+
+new.m<- table(m2$age.group, m2$response)
+
+new.m1 = as.data.frame.matrix(new.m)
+
+new.m1$ID<-seq.int(nrow(new.m1))
+
+new.m1 <- new.m1[c(3,1:2)]
+
+mm <- melt(new.m1[,c('ID','no','yes')],id.vars = 1)
+
+new.m1$age.group <- c("10-19","20-29","30-39","40-49", "50-59", "60-69", "70-79", "80-89", "90-99")
+
+new.m1 <- new.m1[c(1,4,2,3)]
+
+print(new.m1[, 1:2])
+ggplot(mm,aes(x = ID,y = value, fill = variable)) + 
+           geom_bar(stat="identity", position = "dodge") + scale_x_continuous(breaks= mm$ID)
+
+```
+
+The above plot shows the distribution of Age w.r.t the responses attained. Let's plot a pie chart for more clearer view at the age of the subscribers.
+
+```{r}
+
+piepercent<- round(100*new.m1$yes/sum(new.m1$yes), 1)
+
+piepercent <- paste(piepercent, "%")
+
+pie(new.m1$yes, labels = piepercent, main = "Distribution of age wrt positive response", col = rainbow(length(new.m1$yes)))
+legend("bottomleft", c("10-19","20-29","30-39","40-49", "50-59", "60-69", "70-79", "80-89", "90-99"), cex = 1.0,
+      fill = rainbow(length(new.m1$yes)))
+
+```
+
+From the above plot we could clearly see which Age-Group has been subscribed for the term deposit which is *30-39 age group* which is nearly 37 % of the whole subscriptions.
+
+**New clients who subscribed to the term deposit**
+
+The dataset includes the responses of more than 40000 clients. The Columns *default*, *housing* and *loan* includes the responses whether the clients is already a part of the credit plan or not.
+
+Let's analyse how many new clients have subscribed to the *term deposit*.
+
+```{r}
+for(i in m2[,1])
+{
+    if(m2$default[i] == "no")
+    {
+      if(m2$housing[i] == "no")
+      {
+        if(m2$loan[i] == "no")
+         {
+          m2$new.user[i] = "yes"
+        }
+      }
+      else
+        m2$new.user[i] = "no"
+    }
+  else
+    m2$new.user[i] = "no"
+}
+
+table(m2$new.user)
+```
+
+The results shows that out of the total subscribers, only 14614 clients are the fresh subscribers who doesn't have housing loan, credit default or anyother person loan.
+
+**Previous outcome w.r.t the positive response**
+
+The clients have been previously contacted or not, If yes what is outcome has been recorded as the *poutcome* column of the dataset. Here we are going to plot the result of the previous outcome of the clients w.r.t the outcome of the response of the same user for the term deposit scheme.
+```{r}
+p2 <- table(m2$poutcome, m2$response)
+p2 = as.data.frame.matrix(p2)
+
+setDT(p2, keep.rownames = TRUE)[]
+colnames(p2)[1] <- "outcome"
+
+piepercent11<- round(100*p2$yes/sum(p2$yes), 1)
+
+piepercent11 <- paste(piepercent11, "%")
+
+pie(p2$yes, labels = piepercent11, main = "Previous outcome wrt positive response", col = rainbow(length(p2$yes)))
+legend("topright", c(p2$outcome), cex = 1.0, fill = rainbow(length(p2$yes)))
+
+```
+
+*The plot shows the Success rate of the Term deposit campaign w.r.t. the outcome of the previous campaign.*
+
+
+**Profession of the Subscibers**
+
+Variation of positive response w.r.t the count of the profession of the term subscribers.
+
+```{r}
+j2 <- table(m1$job, m1$response)
+
+j2 = as.data.frame.matrix(j2)
+
+setDT(j2, keep.rownames = TRUE)[]
+colnames(j2)[1] <- "job"
+
+barplot(j2$yes, names.arg=j2$job, horiz=TRUE, las=1, cex.names=0.6,  border=TRUE, xlab = "Count", main = "Profession wrt positive response", axes = "TRUE")
+
+```
+
+
+**Subcription rate Month**
+
+```{r}
+
+n2 <- table(m1$month, m1$response)
+
+n2 = as.data.frame.matrix(n2)
+
+setDT(n2, keep.rownames = TRUE)[]
+colnames(n2)[1] <- "month"
+
+nn2 <- melt(n2[,c('month','no','yes')],id.vars = 1)
+
+piepercent1<- round(100*n2$yes/sum(n2$yes), 1)
+
+piepercent1 <- paste(piepercent1, "%")
+
+pie(n2$yes, labels = piepercent1, main = "Distribution of months wrt positive response", col = rainbow(length(n2$yes)))
+legend("topright", c(n2$month), cex = 1.0, fill = rainbow(length(n2$yes)))
+
+```
+
+*Variation of monthly subscriptions with positive response on the campaign.*
+
+**Other Relevant Obsevations**
+
+```{r}
+table(m2$housing, m2$response)  ## Shows how many clients have housing loan and has subscribed for the term deposit
+table(m2$loan, m2$response)   ## Shows how many clients have loan and has subscribed for the term deposit
+table(m2$default, m2$response) ## Shows how many clients have credit in default and has subscribed for the term deposit
+
+```
+Complete Analysis has been performed using R studio.
+
