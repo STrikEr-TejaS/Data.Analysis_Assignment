@@ -1,0 +1,133 @@
+---
+title: "Updated_Assignment"
+author: "Teja"
+date: "September 15, 2016"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+Analysis of a Direct Marketing campaign of a European Banking institution. The marketing campaigns were conducted through phone calls. Often, more than one contact to the same client was required, in order to access if the product subscribed (bank term deposit) would be ('yes') or ('no').
+
+
+```{r}
+library(data.table); library(ggplot2); library(plyr); library(rpart);library(rattle);
+ library(rpart.plot); library(RColorBrewer)
+myy <- read.table("New.txt", header = TRUE, sep = ";")
+
+m1 <- data.frame(myy)
+
+m1$ID<-seq.int(nrow(m1)) ## Adding a new column ID
+
+m2 <- m1[c(22,1:21)] ## Re-positioning the column ID to the beginning
+
+```
+
+A brief plot shows the response variation when mapped to multivariable w.r.t distribution of Age and profession of the clients
+
+```{r}
+ggplot(m2, aes(x = response, y = age , fill = job )) + geom_boxplot() +
+  facet_wrap(~ job, ncol = 4)
+
+
+```
+
+So as to analyse the profession and age group which has the highest no. of subscriptions.
+
+**Logistic Regression**
+
+```{r}
+#Independent variables
+age<- m2$age
+job<- m2$job
+martial<-m2$marital
+education<-m2$education
+default<-m2$default
+housing<-m2$housing
+loan <- m2$loan
+
+# Dependent variable
+response<-m2$response
+
+#Generating labels
+l_job<-rbind(levels(job))
+l_martial<-rbind(levels(martial))
+l_education<-rbind(levels(education))
+l_default<-rbind(levels(default))
+l_housing<-rbind(levels(housing))
+l_loan<-rbind(levels(loan))
+
+
+#Factoring variables
+f.job<-factor(job,labels=l_job)
+f.martial<-factor(martial,labels=l_martial)
+f.education<-factor(education,labels=l_education)
+f.default<-factor(default,labels=l_default)
+f.housing<-factor(housing,labels=l_housing)
+f.loan<-factor(loan,labels=l_loan)
+
+
+
+# Create Contras matrix#
+contrasts(f.job) = contr.treatment(length(levels(job)))
+contrasts(f.martial) = contr.treatment(length(levels(martial)))
+contrasts(f.education) = contr.treatment(length(levels(education)))
+contrasts(f.default) = contr.treatment(length(levels(default)))
+contrasts(f.housing) = contr.treatment(length(levels(housing)))
+contrasts(f.loan) = contr.treatment(length(levels(loan)))
+
+
+
+#Model_1
+Model_1 <- glm(response ~ age + f.job +f.martial +f.education +f.default+f.default
+               +f.housing+f.loan, data=m2  ,family = binomial("logit"))
+summary(Model_1)
+
+```
+
+After generating a linear model of the dependent variable w.r.t the variables. The accuracy of the model generated is accessed. So as to evaluate the model.
+
+```{r}
+#Accuracy of the Model_1 after prediction
+in_d <- data.frame(age,job,martial,education,default,housing,loan, response)
+predicted_response<-round(predict(Model_1,in_d,type="response"))
+confusion_matrix <- ftable(response, predicted_response)
+accuracy <- sum(diag(confusion_matrix))/41188*100
+accuracy
+```
+
+**Accuracy** is found to be `r accuracy`.'. Techinically the model can be used to predict the response with that accuracy.
+
+**Using Rpart to make a decision tree**
+
+```{r}
+
+fit = rpart(response ~ ., data = myy, method = "class")
+
+fancyRpartPlot(fit, main = "Decision Tree of the dependent variable, Response")
+
+```
+
+The fancy plot shows the decision tree of the response w.r.t other attributes like duration, No. of employees, 
+
+**Lets evaluate the accuracy of the decision tree**
+
+```{r}
+
+pp = predict(fit, myy, type = "class")
+
+st <- data.frame(age = myy$age, response = pp)
+
+ct <- ftable(response, pp)
+ay <- sum(diag(ct))/41188*100
+ay
+
+
+
+```
+
+**Accuracy** is found to be `r ay`.'.
+
+The accuracy is even more than the accuracy of linear model generated. Hence, it is highly recommeded to make sure the attributes lie within the positive decision tree so as to get a positive response.
+
+For previous insights please visit [Gramener.Assigment](https://github.com/STrikEr-TejaS/Gramener_Assignment)
