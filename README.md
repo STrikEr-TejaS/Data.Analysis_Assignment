@@ -7,7 +7,7 @@ Includes complete Analysis on the case study.
 
 1. Complete Analysis has been performed using R studio.
 
-2. The file "gramener_assignment.Rmd" includes the complete codebook of the analysis.
+2. The file "Data.Analysis_assignment.Rmd" includes the complete codebook of the analysis.
 
 3. Report has been generated as a Word and HTML document.
 
